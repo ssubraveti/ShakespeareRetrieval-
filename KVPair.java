@@ -2,9 +2,9 @@ package com.invertedindex;
 
 public class KVPair implements Comparable<KVPair> {
     private int docid;
-    private int score;
+    private double score;
 
-    KVPair(int docid, int score) {
+    KVPair(int docid, double score) {
         this.docid = docid;
         this.score = score;
     }
@@ -13,7 +13,7 @@ public class KVPair implements Comparable<KVPair> {
         return docid;
     }
 
-    int getScore() {
+    double getScore() {
         return score;
     }
 

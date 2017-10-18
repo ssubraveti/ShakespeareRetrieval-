@@ -188,7 +188,19 @@ public class Main {
         */
 
         //createIndex(true);
-        runQueryFromString("dansker,unshaken,paysan,equinox,imposition,stoccata,essentially", false);
+        //runQueryFromString("dansker,unshaken,paysan,equinox,imposition,stoccata,essentially", false);
+        createIndex(false);
+        QueryRetriever queryRetriever = new QueryRetriever();
+        queryRetriever.loadSceneIdMap("src/main/resources/sceneIdHashTable.txt");
+        queryRetriever.loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
+        //queryRetriever.constructDocVectors();
+        PriorityQueue<KVPair> res = queryRetriever.rankDocumentsBM25("the king queen royalty", "src/main/resources/invertedIndex.bin");
+
+
+        while (!(res.isEmpty())) {
+            KVPair doc = res.poll();
+            System.out.println(doc.getDocid() + " " + doc.getScore());
+        }
 
 
     }

@@ -35,6 +35,7 @@ public class TermVectorizer {
             PrintWriter sceneIdWriter = new PrintWriter(new FileWriter("src/main/resources/sceneIdHashTable.txt"));
             PrintWriter playIdWriter = new PrintWriter(new FileWriter("src/main/resources/PlayIdHashTable.txt"));
             PrintWriter docTextWriter = new PrintWriter(new FileWriter("src/main/resources/docTextHashTable.txt"));
+            PrintWriter docLengthWriter = new PrintWriter(new FileWriter("src/main/resources/docLengthHashTable.txt"));
 
             for (int i = 0; i < documents.size(); i++) {
                 JSONObject document = (JSONObject) documents.get(i);
@@ -46,6 +47,7 @@ public class TermVectorizer {
                     reverseSceneIdMap.put(sceneId, sceneIdKey);
                     sceneIdWriter.println(sceneIdKey + "," + sceneId);
                     docTextWriter.println(sceneIdKey + "," + docText);
+                    docLengthWriter.println(sceneIdKey + "," + docText.split("\\s+").length);
                     sceneIdKey++;
                 }
                 if (!(playIDMap.containsValue(playId))) {
@@ -58,6 +60,8 @@ public class TermVectorizer {
             }
             playIdWriter.close();
             sceneIdWriter.close();
+            docTextWriter.close();
+            docLengthWriter.close();
         } catch (FileNotFoundException fe) {
             System.out.println("File not found");
             fe.printStackTrace();
