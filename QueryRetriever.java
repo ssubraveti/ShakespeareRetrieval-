@@ -6,15 +6,13 @@ import java.nio.channels.FileChannel;
 import java.util.*;
 
 public class QueryRetriever {
-    private PriorityQueue<KVPair> scores;
-    private Map<Integer, String> sceneIdMap;
-    private Map<String, LookupData> vocabularyOffsets;
+    private HashMap<Integer, String> sceneIdMap;
+    private HashMap<String, LookupData> vocabularyOffsets;
     private HashMap<Integer, HashMap<String, Double>> documentVectors;
     private HashMap<Integer, Double> denominators;
     private HashMap<Integer, Integer> docLengthMap;
 
     QueryRetriever() {
-        scores = new PriorityQueue<KVPair>();
         sceneIdMap = new HashMap<Integer, String>();
         vocabularyOffsets = new HashMap<String, LookupData>();
         documentVectors = new HashMap<Integer, HashMap<String, Double>>();
@@ -188,13 +186,13 @@ public class QueryRetriever {
 
         double numDocs = sceneIdMap.size();
 
-        loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
-        loadSceneIdMap("src/main/resources/sceneIdHashTable.txt");
+        loadVocabularyOffsets(FilePaths.termOffsets);
+        loadSceneIdMap(FilePaths.sceneIdHashMap);
         //HashMap<Integer, HashMap<String,Double>> numerators = new HashMap<Integer, HashMap<String, Double>>();
         //HashMap<Integer, Double> denominators = new HashMap<Integer, Double>();
 
         for (String term : vocabularyOffsets.keySet()) {
-            ArrayList<Posting> termPostings = getTermInvertedList(term, "src/main/resources/invertedIndex.bin");
+            ArrayList<Posting> termPostings = getTermInvertedList(term, FilePaths.indexFile);
 
             for (Posting p : termPostings) {
                 //current docid
@@ -260,7 +258,7 @@ public class QueryRetriever {
         return termWeights;
     }
 
-    double calculateDocScoreVSM(int docid, HashMap<String, Double> queryVector) {
+    double calculateScoreVSM(int docid, HashMap<String, Double> queryVector) {
 
         double score = 0;
         HashMap<String, Double> docVector = documentVectors.get(docid);
@@ -293,20 +291,16 @@ public class QueryRetriever {
         //ArrayList<ArrayList<Posting>> termPostings = fetchTermInvertedLists(query, invertedIndexFile);
         //int num_documents = sceneIdMap.size();
         for (int docid : docids) {
-            double docScore = calculateDocScoreVSM(docid, queryVector);
+            double docScore = calculateScoreVSM(docid, queryVector);
             KVPair docIdScorePair = new KVPair(docid, docScore);
             scores.add(docIdScorePair);
         }
         return scores;
     }
 
-    double calculateDocScoreBM25(int docid, String query) {
+    double calculateDocScoreBM25(int docid, String query, double k1, double k2, double b) {
 
-        double k1 = 1.2;
-        double k2 = 100;
-        double b = 0.75;
         String[] queryTerms = query.split("\\s+");
-        loadDocLengthMap("src/main/resources/docLengthHashTable.txt");
         double avgLength = 0.0;
         double N = docLengthMap.size();
         for (int documentId : docLengthMap.keySet()) {
@@ -335,7 +329,7 @@ public class QueryRetriever {
 
         double score = 0.0;
         for (String term : queryTermFrequencies.keySet()) {
-            ArrayList<Posting> postings = getTermInvertedList(term, "src/main/resources/invertedIndex.bin");
+            ArrayList<Posting> postings = getTermInvertedList(term, FilePaths.indexFile);
             for (Posting p : postings) {
                 int currentDocID = p.getDocid();
                 if (currentDocID == docid) {
@@ -354,7 +348,71 @@ public class QueryRetriever {
         return score;
     }
 
-    PriorityQueue<KVPair> rankDocumentsBM25(String query, String invertedIndexFile) {
+    PriorityQueue<KVPair> rankDocumentsBM25(String query, String invertedIndexFile, double k1, double k2, double b) {
+
+        loadVocabularyOffsets(FilePaths.termOffsets);
+        loadDocLengthMap(FilePaths.docLengthHashMap);
+        loadSceneIdMap(FilePaths.sceneIdHashMap);
+        HashSet<Integer> docids = new HashSet<Integer>();
+
+        ArrayList<ArrayList<Posting>> termPostings = fetchTermInvertedLists(query, invertedIndexFile);
+
+        for (ArrayList<Posting> postings : termPostings) {
+            for (Posting posting : postings) {
+                docids.add(posting.getDocid());
+            }
+        }
+
+        PriorityQueue<KVPair> scores = new PriorityQueue<KVPair>();
+
+        for (int docid : docids) {
+            double docScore = calculateDocScoreBM25(docid, query, k1, k2, b);
+            KVPair docIdScorePair = new KVPair(docid, docScore);
+            scores.add(docIdScorePair);
+        }
+
+
+        return scores;
+    }
+
+    double calculateScoreJMSmoothing(int documentID, String query, double lambda) {
+        String[] queryTerms = query.split("\\s+");
+
+        loadDocLengthMap(FilePaths.docLengthHashMap);
+        loadVocabularyOffsets(FilePaths.termOffsets);
+        loadSceneIdMap(FilePaths.sceneIdHashMap);
+        double score = 0;
+        double totalWords = 0;
+        for (int docid : docLengthMap.keySet()) {
+            totalWords += docLengthMap.get(docid);
+        }
+        int flag;
+        for (String term : queryTerms) {
+            ArrayList<Posting> postings = getTermInvertedList(term, FilePaths.indexFile);
+            flag = 0;
+            long ctf = vocabularyOffsets.get(term).getCtf();
+            for (Posting posting : postings) {
+                int docid = posting.getDocid();
+                double tf = posting.getTf();
+                double docLength = docLengthMap.get(docid);
+                if (docid == documentID) {
+                    flag = 1;
+                    score += Math.log10((1.0 - lambda) * (tf / docLength) + lambda * (ctf / totalWords));
+                    break;
+                }
+            }
+            if (flag == 0) {
+                score += Math.log10(lambda * (ctf / totalWords));
+            }
+        }
+        return score;
+    }
+
+    PriorityQueue<KVPair> rankDocumentsJMSmoothing(String query, String invertedIndexFile, double lambda) {
+
+        loadVocabularyOffsets(FilePaths.termOffsets);
+        loadDocLengthMap(FilePaths.docLengthHashMap);
+        loadSceneIdMap(FilePaths.sceneIdHashMap);
 
 
         HashSet<Integer> docids = new HashSet<Integer>();
@@ -370,7 +428,7 @@ public class QueryRetriever {
         PriorityQueue<KVPair> scores = new PriorityQueue<KVPair>();
 
         for (int docid : docids) {
-            double docScore = calculateDocScoreBM25(docid, query);
+            double docScore = calculateScoreJMSmoothing(docid, query, lambda);
             KVPair docIdScorePair = new KVPair(docid, docScore);
             scores.add(docIdScorePair);
         }
@@ -378,15 +436,72 @@ public class QueryRetriever {
     }
 
 
-    Map<String, LookupData> getVocabularyOffsets() {
+    double calculateScoreDirichletSmoothing(int docid, String query, double mu) {
+
+
+        String[] queryTerms = query.split("\\s+");
+        loadDocLengthMap(FilePaths.docLengthHashMap);
+        double C = 0.0;
+
+        for (Integer documentId : docLengthMap.keySet()) {
+            C += docLengthMap.get(documentId);
+        }
+
+        double score = 0;
+        int flag;
+        for (String term : queryTerms) {
+            ArrayList<Posting> postings = getTermInvertedList(term, FilePaths.indexFile);
+            long cqi = vocabularyOffsets.get(term).getCtf();
+            flag = 0;
+            double D = docLengthMap.get(docid);
+            for (Posting p : postings) {
+                int documentID = p.getDocid();
+                double fqD = p.getTf();
+                if (documentID == docid) {
+                    flag = 1;
+                    score += Math.log10((fqD + (mu * (cqi / C))) / (D + mu));
+                    break;
+                }
+
+            }
+            if (flag == 0) {
+                score += Math.log10(((mu * (cqi / C))) / (D + mu));
+            }
+        }
+        return score;
+    }
+
+    PriorityQueue<KVPair> rankDocumentsDirichletSmoothing(String query, String invertedIndexFile, double mu) {
+
+
+        loadVocabularyOffsets(FilePaths.termOffsets);
+        loadDocLengthMap(FilePaths.docLengthHashMap);
+        loadSceneIdMap(FilePaths.sceneIdHashMap);
+
+        HashSet<Integer> docids = new HashSet<Integer>();
+
+        ArrayList<ArrayList<Posting>> termPostings = fetchTermInvertedLists(query, invertedIndexFile);
+
+        for (ArrayList<Posting> postings : termPostings) {
+            for (Posting posting : postings) {
+                docids.add(posting.getDocid());
+            }
+        }
+        PriorityQueue<KVPair> scores = new PriorityQueue<KVPair>();
+        for (int docid : docids) {
+            double docScore = calculateScoreDirichletSmoothing(docid, query, mu);
+            KVPair docIdScorePair = new KVPair(docid, docScore);
+            scores.add(docIdScorePair);
+        }
+        return scores;
+    }
+
+
+    HashMap<String, LookupData> getVocabularyOffsets() {
         return vocabularyOffsets;
     }
 
-    Map<Integer, String> getSceneIdMap() {
+    HashMap<Integer, String> getSceneIdMap() {
         return sceneIdMap;
-    }
-
-    PriorityQueue<KVPair> getScores() {
-        return scores;
     }
 }

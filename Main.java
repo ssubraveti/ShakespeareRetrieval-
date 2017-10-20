@@ -6,17 +6,14 @@ import javax.print.attribute.IntegerSyntax;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Scanner;
+import java.util.*;
 
 
 public class Main {
 
     public static void createIndex(boolean compress) {
 
-        ParseJSON parseJSON = new ParseJSON("src/main/resources/shakespeare-scenes.json");
+        ParseJSON parseJSON = new ParseJSON(FilePaths.scenesFile);
         JSONArray allDocuments = parseJSON.getAllDocuments();
 
         if (!compress) {
@@ -35,8 +32,8 @@ public class Main {
     public static void runQueriesFromFile(String filename, boolean experiment) {
 
         QueryRetriever queryRetriever = new QueryRetriever();
-        queryRetriever.loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
-        queryRetriever.loadSceneIdMap("src/main/resources/sceneIdHashtable.txt");
+        queryRetriever.loadVocabularyOffsets(FilePaths.termOffsets);
+        queryRetriever.loadSceneIdMap(FilePaths.sceneIdHashMap);
         ArrayList<PriorityQueue<KVPair>> results = new ArrayList<PriorityQueue<KVPair>>();
         try {
             File queryFile = new File(filename);
@@ -46,7 +43,7 @@ public class Main {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
                 String query = line;
-                results.add(queryRetriever.rankDocuments(query, "src/main/resources/invertedIndex.bin"));
+                results.add(queryRetriever.rankDocuments(query, FilePaths.indexFile));
             }
             if (!experiment) {
                 for (PriorityQueue<KVPair> result : results) {
@@ -73,13 +70,15 @@ public class Main {
 
         if (!compressed) {
             QueryRetriever queryRetriever = new QueryRetriever();
-            queryRetriever.loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
-            queryRetriever.loadSceneIdMap("src/main/resources/sceneIdHashtable.txt");
+            queryRetriever.loadVocabularyOffsets(FilePaths.termOffsets);
+            queryRetriever.loadSceneIdMap(FilePaths.sceneIdHashMap);
+            queryRetriever.constructDocVectors();
+            //queryRetriever.constructQueryVector(query);
             PriorityQueue<KVPair> results;
+            results = queryRetriever.rankDocumentsVSM(query, FilePaths.indexFile);
 
-            results = queryRetriever.rankDocuments(query, "src/main/resources/invertedIndex.bin");
-
-            for (int i = 0; i < 5; i++) {
+            System.out.println("Top 20 documents: ");
+            for (int i = 0; i < 20; i++) {
                 KVPair answer = results.poll();
                 System.out.println("DocId: " + answer.getDocid() + " Score: " + answer.getScore());
 
@@ -102,18 +101,48 @@ public class Main {
 
     }
 
+    public static void buildTRECFiles() {
+        //createIndex(false);
+
+        Scanner in = new Scanner(System.in);
+        QueryRetriever queryRetriever = new QueryRetriever();
+        queryRetriever.loadSceneIdMap(FilePaths.sceneIdHashMap);
+        HashMap<Integer, String> sceneIdMap = queryRetriever.getSceneIdMap();
+        TRECFileGenerator trecFileGenerator = new TRECFileGenerator(FilePaths.queryFile);
+
+        System.out.println("Enter mu value for ranking documents with the Query Likelihood Model using Dirichlet Smoothing: ");
+        double mu = in.nextDouble();
+        trecFileGenerator.buildTRECFileDirichletSmoothing(mu, sceneIdMap);
+        System.out.println("TREC file ql-dir.trecrun built!!");
+
+
+        System.out.println("Enter lambda value for ranking documents with the Query Likelihood Model using Jellnick-Mercer Smoothing: ");
+        double lambda = in.nextDouble();
+        trecFileGenerator.buildTRECFileJMSmoothing(lambda, sceneIdMap);
+
+        System.out.println("TREC file ql-jm.trecrun built!");
+
+        System.out.println("Enter parameter values for ranking using BM25 model: ");
+        System.out.println("k1: ");
+        double k1 = in.nextDouble();
+        System.out.println("k2: ");
+        double k2 = in.nextDouble();
+        System.out.println("b: ");
+        double b = in.nextDouble();
+        trecFileGenerator.buildTRECFileBM25(k1, k2, b, sceneIdMap);
+        System.out.println("TREC file bm25.trecrun built!!");
+    }
+
     public static void main(String[] args) {
         // write your code here
 
-        /*
+
         Scanner in = new Scanner(System.in);
         System.out.println("Welcome to the Shakespeare Indexer!");
         System.out.println("What do you want to do?");
         System.out.println("Click:");
-        System.out.println("1. To build an uncompressed index");
-        System.out.println("2. To build a compressed index");
-        System.out.println("3. Use existing index files to test compression hypothesis");
-        System.out.println("4. Something else");
+        System.out.println("1. To build the index");
+        System.out.println("2. Use existing index to build TREC files");
 
         int choice = in.nextInt();
 
@@ -122,89 +151,46 @@ public class Main {
                 createIndex(false);
                 break;
             case 2:
-                createIndex(true);
-                break;
-            case 3:
-                long tick = System.nanoTime();
-                runQueriesFromFile("src/main/resources/queryFile1.txt",true);
-                long tock = System.nanoTime();
-                System.out.println("That took: "+(tock-tick)/100000+" ms for file 1");
-                 long tick2 = System.nanoTime();
-                runQueriesFromFile("src/main/resources/queryFile1.txt",true);
-                long tock2 = System.nanoTime();
-                System.out.println("That took: "+(tock-tick)/100000+" ms for file 2");
-
-
-                break;
-            case 4:
+                buildTRECFiles();
                 break;
 
 
 
         }
         if(choice == 1){
-            System.out.println("Would you still like to build the compressed index?");
+            System.out.println("Index built! Proceed to building TREC files?");
             System.out.println("    1. Yes");
             System.out.println("    2. No");
             int choice2 = in.nextInt();
             switch (choice2){
                 case 1:
-                    createIndex(true);
+                    System.out.println("Building TREC files");
+                    buildTRECFiles();
                     break;
+
                 case 2:
                     System.out.println("All required indexes and data structures in place!");
+                    break;
             }
         }
-        System.out.println("Do you wish to do some retrieval?");
+        System.out.println("Try out the Vector Space Model?");
         System.out.println("    1. Yes");
         System.out.println("    2. No");
-        int choice3 = in.nextInt();
-        switch (choice3){
+        int choice2 = in.nextInt();
+        String buffer = in.nextLine();
+        switch (choice2) {
             case 1:
-                System.out.println("Would you like to use: ");
-                System.out.println("    1. Query files");
-                System.out.println("    2. Use your own query");
-                int choice4 = in.nextInt();
-                switch (choice4){
-                    case 1:
-                        runQueriesFromFile("src/main/resources/queryFile1.txt",false);
-                        break;
-                    case 2:
-                        System.out.println("Enter your query as comma separated strings");
-                        String query = in.next();
-                        QueryRetriever qr = new QueryRetriever();
-                        qr.loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
-                        ArrayList<ArrayList<Posting>> p = qr.fetchTermInvertedLists("cancel","src/main/resources/invertedIndex.bin");
-                        ArrayList<Posting> tp = p.get(0);
-                        int totalLen = 0;
-                        for(Posting posting : tp){
-                            totalLen+=2+posting.getPositions().size();
-                        }
-                        System.out.println(totalLen);
-                        //runQueryFromString(query);
-                        break;
-                        }
-                }
-        */
-
-        //createIndex(true);
-        //runQueryFromString("dansker,unshaken,paysan,equinox,imposition,stoccata,essentially", false);
-        createIndex(false);
-        QueryRetriever queryRetriever = new QueryRetriever();
-        queryRetriever.loadSceneIdMap("src/main/resources/sceneIdHashTable.txt");
-        queryRetriever.loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
-        //queryRetriever.constructDocVectors();
-        PriorityQueue<KVPair> res = queryRetriever.rankDocumentsBM25("the king queen royalty", "src/main/resources/invertedIndex.bin");
-
-
-        while (!(res.isEmpty())) {
-            KVPair doc = res.poll();
-            System.out.println(doc.getDocid() + " " + doc.getScore());
+                System.out.print("Enter query as space separated strings: ");
+                String query = in.nextLine();
+                runQueryFromString(query, false);
+                break;
+            case 2:
+                System.out.println("Quitting!");
+                break;
         }
 
 
     }
-
 
 }
 

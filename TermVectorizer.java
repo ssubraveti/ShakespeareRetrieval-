@@ -32,10 +32,10 @@ public class TermVectorizer {
         //String newline = System.getProperty("line.separator");
 
         try {
-            PrintWriter sceneIdWriter = new PrintWriter(new FileWriter("src/main/resources/sceneIdHashTable.txt"));
-            PrintWriter playIdWriter = new PrintWriter(new FileWriter("src/main/resources/PlayIdHashTable.txt"));
-            PrintWriter docTextWriter = new PrintWriter(new FileWriter("src/main/resources/docTextHashTable.txt"));
-            PrintWriter docLengthWriter = new PrintWriter(new FileWriter("src/main/resources/docLengthHashTable.txt"));
+            PrintWriter sceneIdWriter = new PrintWriter(new FileWriter(FilePaths.sceneIdHashMap));
+            PrintWriter playIdWriter = new PrintWriter(new FileWriter(FilePaths.playIdHashMap));
+            PrintWriter docTextWriter = new PrintWriter(new FileWriter(FilePaths.docTextHashMap));
+            PrintWriter docLengthWriter = new PrintWriter(new FileWriter(FilePaths.docLengthHashMap));
 
             for (int i = 0; i < documents.size(); i++) {
                 JSONObject document = (JSONObject) documents.get(i);
@@ -124,8 +124,8 @@ public class TermVectorizer {
         long startPosition = 0;
 
         try {
-            RandomAccessFile invertedIndexFile = new RandomAccessFile("src/main/resources/invertedIndex.bin", "rw");
-            PrintWriter termMapWriter = new PrintWriter(new FileWriter("src/main/resources/termOffsetMap.txt"));
+            RandomAccessFile invertedIndexFile = new RandomAccessFile(FilePaths.indexFile, "rw");
+            PrintWriter termMapWriter = new PrintWriter(new FileWriter(FilePaths.termOffsets));
 
             for (Map.Entry<String, ArrayList<Posting>> entry : termPostingMap.entrySet()) {
                 String term = entry.getKey();
