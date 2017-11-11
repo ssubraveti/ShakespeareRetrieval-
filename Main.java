@@ -2,10 +2,8 @@ package com.invertedindex;
 
 import org.json.simple.JSONArray;
 
-import javax.print.attribute.IntegerSyntax;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
+
 import java.util.*;
 
 
@@ -134,62 +132,26 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // write your code here
 
 
-        Scanner in = new Scanner(System.in);
-        System.out.println("Welcome to the Shakespeare Indexer!");
-        System.out.println("What do you want to do?");
-        System.out.println("Click:");
-        System.out.println("1. To build the index");
-        System.out.println("2. Use existing index to build TREC files");
-
-        int choice = in.nextInt();
-
-        switch (choice){
-            case 1:
-                createIndex(false);
-                break;
-            case 2:
-                buildTRECFiles();
-                break;
+        createIndex(false);
 
 
+        QueryRetriever retriever = new QueryRetriever();
+        retriever.loadSceneIdMap(FilePaths.sceneIdHashMap);
 
+        HashMap<Integer, String> sceneIdMap = retriever.getSceneIdMap();
+
+        TRECFileGenerator trecFileGenerator = new TRECFileGenerator(FilePaths.queryFile);
+        trecFileGenerator.buildTRECFileUW(2000, sceneIdMap);
+        trecFileGenerator.buildTRECFileOW(2000, sceneIdMap);
+
+
+        Map<Integer, Double> docscores = QueryRunner.runQuery();
+
+        for (Map.Entry<Integer, Double> entry : docscores.entrySet()) {
+            System.out.println(entry.getKey() + " " + entry.getValue());
         }
-        if(choice == 1){
-            System.out.println("Index built! Proceed to building TREC files?");
-            System.out.println("    1. Yes");
-            System.out.println("    2. No");
-            int choice2 = in.nextInt();
-            switch (choice2){
-                case 1:
-                    System.out.println("Building TREC files");
-                    buildTRECFiles();
-                    break;
-
-                case 2:
-                    System.out.println("All required indexes and data structures in place!");
-                    break;
-            }
-        }
-        System.out.println("Try out the Vector Space Model?");
-        System.out.println("    1. Yes");
-        System.out.println("    2. No");
-        int choice2 = in.nextInt();
-        String buffer = in.nextLine();
-        switch (choice2) {
-            case 1:
-                System.out.print("Enter query as space separated strings: ");
-                String query = in.nextLine();
-                runQueryFromString(query, false);
-                break;
-            case 2:
-                System.out.println("Quitting!");
-                break;
-        }
-
-
     }
 
 }

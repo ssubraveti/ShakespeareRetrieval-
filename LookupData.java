@@ -16,19 +16,19 @@ public class LookupData {
         this.metadata.put("df", df);
     }
 
-    long getCtf() {
+    Long getCtf() {
         return this.metadata.get("ctf");
     }
 
-    long getDf() {
+    Long getDf() {
         return this.metadata.get("df");
     }
 
-    long getOffset() {
+    Long getOffset() {
         return this.metadata.get("offset");
     }
 
-    long getLength() {
+    Long getLength() {
         return this.metadata.get("length");
     }
 

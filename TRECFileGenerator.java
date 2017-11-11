@@ -36,10 +36,10 @@ public class TRECFileGenerator {
         String modelString = "ssubraveti-bm25-" + k1 + "-" + k2 + "-" + b;
 
         try {
-            PrintWriter printWriter = new PrintWriter(new FileWriter("src/main/resources/bm25.trecrun"));
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.trecFileBM25));
 
             for (int i = 0; i < queries.size(); ++i) {
-                PriorityQueue<KVPair> results = retriever.rankDocumentsBM25(queries.get(i), "src/main/resources/invertedIndex.bin", k1, k2, b);
+                PriorityQueue<KVPair> results = retriever.rankDocumentsBM25(queries.get(i), FilePaths.indexFile, k1, k2, b);
                 int rank = 1;
                 while (!(results.isEmpty())) {
                     KVPair result = results.poll();
@@ -64,10 +64,10 @@ public class TRECFileGenerator {
         String modelString = "ssubraveti-ql-jm-" + lambda;
 
         try {
-            PrintWriter printWriter = new PrintWriter(new FileWriter("src/main/resources/ql-jm.trecrun"));
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.trecFileJM));
 
             for (int i = 0; i < queries.size(); ++i) {
-                PriorityQueue<KVPair> results = retriever.rankDocumentsJMSmoothing(queries.get(i), "src/main/resources/invertedIndex.bin", lambda);
+                PriorityQueue<KVPair> results = retriever.rankDocumentsJMSmoothing(queries.get(i), FilePaths.indexFile, lambda);
                 int rank = 1;
                 while (!(results.isEmpty())) {
                     KVPair result = results.poll();
@@ -93,10 +93,10 @@ public class TRECFileGenerator {
         String modelString = "ssubraveti-ql-dir-" + mu;
 
         try {
-            PrintWriter printWriter = new PrintWriter(new FileWriter("src/main/resources/ql-dir.trecrun"));
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.trecFileDirichlet));
 
             for (int i = 0; i < queries.size(); ++i) {
-                PriorityQueue<KVPair> results = retriever.rankDocumentsDirichletSmoothing(queries.get(i), "src/main/resources/invertedIndex.bin", mu);
+                PriorityQueue<KVPair> results = retriever.rankDocumentsDirichletSmoothing(queries.get(i), FilePaths.indexFile, mu);
                 int rank = 1;
                 while (!(results.isEmpty())) {
                     KVPair result = results.poll();
@@ -113,5 +113,75 @@ public class TRECFileGenerator {
             ioe.printStackTrace();
         }
     }
+
+    void buildTRECFileUW(double mu, HashMap<Integer, String> sceneIdMap) {
+
+        System.out.println(mu);
+
+
+        String modelString = "ssubraveti-uw-dir-2000";
+
+        try {
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.trecFileUW));
+
+            for (int i = 0; i < queries.size(); ++i) {
+
+                String[] queryTerms = queries.get(i).split("\\s+");
+                int windowSize = queryTerms.length;
+                UnorderedWindow unorderedWindow = new UnorderedWindow(queryTerms, windowSize);
+                PriorityQueue<KVPair> results = unorderedWindow.rankDocumentsUW(queryTerms, windowSize);
+                if (results.size() > 0) {
+                    int rank = 1;
+                    while (!(results.isEmpty())) {
+                        KVPair result = results.poll();
+                        int docid = result.getDocid();
+                        double score = result.getScore();
+                        printWriter.println("Q" + (i + 1) + " " + "skip" + " " + sceneIdMap.get(docid) + " " + rank + " " + score + " " + modelString);
+                        ++rank;
+                    }
+                }
+
+            }
+            printWriter.close();
+        } catch (IOException ioe) {
+            System.out.println("I/O Exception!!");
+            ioe.printStackTrace();
+        }
+    }
+
+    void buildTRECFileOW(double mu, HashMap<Integer, String> sceneIdMap) {
+
+        System.out.println(mu);
+
+        String modelString = "ssubraveti-ow-dir-2000";
+
+        try {
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.trecFileOW));
+
+            for (int i = 0; i < queries.size(); ++i) {
+
+                String[] queryTerms = queries.get(i).split("\\s+");
+                int windowSize = 1;
+                OrderedWindow unorderedWindow = new OrderedWindow(queryTerms, windowSize);
+                PriorityQueue<KVPair> results = unorderedWindow.rankDocumentsOW(queryTerms, windowSize);
+                if (results.size() > 0) {
+                    int rank = 1;
+                    while (!(results.isEmpty())) {
+                        KVPair result = results.poll();
+                        int docid = result.getDocid();
+                        double score = result.getScore();
+                        printWriter.println("Q" + (i + 1) + " " + "skip" + " " + sceneIdMap.get(docid) + " " + rank + " " + score + " " + modelString);
+                        ++rank;
+                    }
+                }
+
+            }
+            printWriter.close();
+        } catch (IOException ioe) {
+            System.out.println("I/O Exception!!");
+            ioe.printStackTrace();
+        }
+    }
+
 
 }

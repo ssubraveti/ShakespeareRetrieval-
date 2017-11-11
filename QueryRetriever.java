@@ -496,6 +496,15 @@ public class QueryRetriever {
         return scores;
     }
 
+    public static double getSmoothingScore(int docid, double totalWords, double docLength, int windowTf,
+                                           int windowCtf, double mu) {
+
+        double score = Math.log10((windowTf + (mu * (windowCtf / totalWords))) / (docLength + mu));
+        return score;
+    }
+
+
+
 
     HashMap<String, LookupData> getVocabularyOffsets() {
         return vocabularyOffsets;
@@ -503,5 +512,9 @@ public class QueryRetriever {
 
     HashMap<Integer, String> getSceneIdMap() {
         return sceneIdMap;
+    }
+
+    HashMap<Integer, Integer> getDocLengthMap() {
+        return docLengthMap;
     }
 }

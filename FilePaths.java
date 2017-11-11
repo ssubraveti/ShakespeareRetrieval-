@@ -13,4 +13,7 @@ public class FilePaths {
     public static final String trecFileBM25 = "src/main/resources/bm25.trecrun";
     public static final String trecFileJM = "src/main/resources/ql-jm.trecrun";
     public static final String trecFileDirichlet = "src/main/resources/ql-dir.trecrun";
+    public static final String trecFileUW = "src/main/resources/uw.trecrun";
+    public static final String trecFileOW = "src/main/resources/od1.trecrun";
+
 }
