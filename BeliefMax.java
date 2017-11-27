@@ -10,7 +10,6 @@ public class BeliefMax implements QueryNode {
     QueryRetriever queryRetriever;
 
     public BeliefMax(ArrayList<QueryNode> childNodes) {
-        // TODO Auto-generated constructor stub
         this.children = childNodes;
         this.queryRetriever = initQueryRetreiver();
     }

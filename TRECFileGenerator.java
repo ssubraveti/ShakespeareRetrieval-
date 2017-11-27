@@ -9,6 +9,10 @@ public class TRECFileGenerator {
 
     ArrayList<String> queries;
 
+    TRECFileGenerator() {
+        //do nothing
+    }
+
     TRECFileGenerator(String queryFile) {
         queries = new ArrayList<String>();
         try {
@@ -183,5 +187,35 @@ public class TRECFileGenerator {
         }
     }
 
+    void generateClusteringOutputFiles(String filepath) {
+
+        Double lowerBound = 0.05;
+        Double i = lowerBound;
+        Double upperBound = 0.95;
+
+        AgglomerativeClusterer clusterer = new AgglomerativeClusterer();
+
+        while (i <= upperBound) {
+            String completePath = filepath + "/cluster-" + i.toString() + ".out";
+            System.out.println("Generating file for threshold " + i);
+            HashMap<Integer, ArrayList<Integer>> clusteringOutput = clusterer.clusterDocsAgglomerative("mean", i);
+            System.out.println("Num clusters: " + clusteringOutput.size());
+            try {
+                PrintWriter printWriter = new PrintWriter(new FileWriter(completePath));
+                for (Integer clusterId : clusteringOutput.keySet()) {
+                    for (Integer docid : clusteringOutput.get(clusterId)) {
+                        printWriter.println(clusterId + " " + docid);
+                    }
+                }
+                printWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //System.out.println("File for threshold "+i+" generated!");
+            i += 0.05;
+            i = Double.parseDouble(String.format("%.2f", i));
+        }
+
+    }
 
 }

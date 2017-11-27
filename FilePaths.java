@@ -15,5 +15,7 @@ public class FilePaths {
     public static final String trecFileDirichlet = "src/main/resources/ql-dir.trecrun";
     public static final String trecFileUW = "src/main/resources/uw.trecrun";
     public static final String trecFileOW = "src/main/resources/od1.trecrun";
+    public static final String docVectors = "src/main/resources/docVectors.txt";
+    public static final String clusteringOutPath = "src/main/resources";
 
 }

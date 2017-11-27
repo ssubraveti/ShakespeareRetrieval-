@@ -73,7 +73,7 @@ public class TermVectorizer {
 
     void buildInvertedIndex(JSONArray documents) {
 
-        System.out.println(documents.size());
+        // System.out.println(documents.size());
 
         for (int i = 0; i < documents.size(); i++) {
             JSONObject document = (JSONObject) documents.get(i);

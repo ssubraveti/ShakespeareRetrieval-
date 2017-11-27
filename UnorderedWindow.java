@@ -1,6 +1,3 @@
-/**
- *
- */
 package com.invertedindex;
 
 import java.util.ArrayList;

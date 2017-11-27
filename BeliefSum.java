@@ -1,8 +1,5 @@
 package com.invertedindex;
 
-/**
- * This class performs belief sum
- */
 
 import java.util.*;
 
@@ -13,7 +10,6 @@ public class BeliefSum implements QueryNode {
     QueryRetriever queryRetriever;
 
     public BeliefSum(ArrayList<QueryNode> childNodes) {
-        // TODO Auto-generated constructor stub
         this.children = childNodes;
         this.queryRetriever = initQueryRetreiver();
     }

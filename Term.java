@@ -16,7 +16,6 @@ public class Term implements QueryNode {
         this.term = term;
         this.totalWords = 0;
         queryRetriever = initQueryRetreiver();
-        // TODO Auto-generated constructor stub
     }
 
     public QueryRetriever initQueryRetreiver() {

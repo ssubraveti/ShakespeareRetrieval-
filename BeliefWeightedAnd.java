@@ -1,7 +1,4 @@
 package com.invertedindex;
-/**
- * This class performs belief weighted and
- */
 
 import java.util.*;
 
@@ -13,7 +10,6 @@ public class BeliefWeightedAnd implements QueryNode {
     QueryRetriever queryRetriever;
 
     public BeliefWeightedAnd(ArrayList<QueryNode> childNodes, ArrayList<Double> childWeights) {
-        // TODO Auto-generated constructor stub
         this.children = childNodes;
         this.weights = childWeights;
         queryRetriever = initQueryRetreiver();

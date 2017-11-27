@@ -134,23 +134,65 @@ public class Main {
     public static void main(String[] args) {
 
 
+        Scanner in = new Scanner(System.in);
+
+        System.out.println("Welcome to the Shakespeare Indexer! Please wait while we create the inverted index!");
+
         createIndex(false);
+        System.out.println("Index and ancillary data structures created! What next?");
+
+        System.out.println("    1. Cluster documents");
+        System.out.println("    2. Generate output files for mean linkage");
+
+        System.out.println("Enter choice: ");
+        int choice = in.nextInt();
+
+        switch (choice) {
+            case 1:
+                System.out.println("Choose linkage type:");
+                System.out.println("    1. MIN");
+                System.out.println("    2. MAX");
+                System.out.println("    3. MEAN");
+                System.out.println("    4. AVERAGE");
+                int choice2 = in.nextInt();
+                switch (choice2) {
+                    case 1:
+                        System.out.println("Enter threshold: ");
+                        double threshold = in.nextDouble();
+                        AgglomerativeClusterer clusterer = new AgglomerativeClusterer();
+                        HashMap<Integer, ArrayList<Integer>> results = clusterer.clusterDocsAgglomerative("min", threshold);
+                        System.out.println("Clustering done! Number of clusters: " + results.size());
+                        break;
+                    case 2:
+                        System.out.println("Enter threshold: ");
+                        clusterer = new AgglomerativeClusterer();
+                        threshold = in.nextDouble();
+                        results = clusterer.clusterDocsAgglomerative("max", threshold);
+                        System.out.println("Clustering done! Number of clusters: " + results.size());
+                        break;
+                    case 3:
+                        System.out.println("Enter threshold: ");
+                        threshold = in.nextDouble();
+                        clusterer = new AgglomerativeClusterer();
+                        results = clusterer.clusterDocsAgglomerative("mean", threshold);
+                        System.out.println("Clustering done! Number of clusters: " + results.size());
+                        break;
+                    case 4:
+                        System.out.println("Enter threshold: ");
+                        threshold = in.nextDouble();
+                        clusterer = new AgglomerativeClusterer();
+                        results = clusterer.clusterDocsAgglomerative("average", threshold);
+                        System.out.println("Clustering done! Number of clusters: " + results.size());
+                        break;
 
 
-        QueryRetriever retriever = new QueryRetriever();
-        retriever.loadSceneIdMap(FilePaths.sceneIdHashMap);
-
-        HashMap<Integer, String> sceneIdMap = retriever.getSceneIdMap();
-
-        TRECFileGenerator trecFileGenerator = new TRECFileGenerator(FilePaths.queryFile);
-        trecFileGenerator.buildTRECFileUW(2000, sceneIdMap);
-        trecFileGenerator.buildTRECFileOW(2000, sceneIdMap);
-
-
-        Map<Integer, Double> docscores = QueryRunner.runQuery();
-
-        for (Map.Entry<Integer, Double> entry : docscores.entrySet()) {
-            System.out.println(entry.getKey() + " " + entry.getValue());
+                }
+                break;
+            case 2:
+                TRECFileGenerator fileGenerator = new TRECFileGenerator();
+                fileGenerator.generateClusteringOutputFiles(FilePaths.clusteringOutPath);
+                System.out.println("Output files created and stored at: " + FilePaths.clusteringOutPath);
+                break;
         }
     }
 

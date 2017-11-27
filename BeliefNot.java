@@ -12,7 +12,6 @@ public class BeliefNot implements QueryNode {
     public BeliefNot(QueryNode childNode) {
         this.child = childNode;
         this.queryRetriever = initQueryRetreiver();
-        // TODO Auto-generated constructor stub
     }
 
     public QueryRetriever initQueryRetreiver() {

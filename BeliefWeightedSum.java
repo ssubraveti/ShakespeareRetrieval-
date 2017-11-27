@@ -11,7 +11,6 @@ public class BeliefWeightedSum implements QueryNode {
     QueryRetriever queryRetriever;
 
     public BeliefWeightedSum(ArrayList<QueryNode> childNodes, ArrayList<Double> childWeights) {
-        // TODO Auto-generated constructor stub
         this.children = childNodes;
         this.weights = childWeights;
         this.queryRetriever = initQueryRetreiver();

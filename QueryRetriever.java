@@ -184,10 +184,9 @@ public class QueryRetriever {
 
     void constructDocVectors() {
 
-        double numDocs = sceneIdMap.size();
-
-        loadVocabularyOffsets(FilePaths.termOffsets);
         loadSceneIdMap(FilePaths.sceneIdHashMap);
+        double numDocs = sceneIdMap.size();
+        loadVocabularyOffsets(FilePaths.termOffsets);
         //HashMap<Integer, HashMap<String,Double>> numerators = new HashMap<Integer, HashMap<String, Double>>();
         //HashMap<Integer, Double> denominators = new HashMap<Integer, Double>();
 
@@ -217,12 +216,28 @@ public class QueryRetriever {
                 //denominators.put(docid,termDenominators);
             }
         }
-        System.out.println("Numerators size: " + documentVectors.size());
-        System.out.println("Denominators size: " + denominators.size());
 
 
     }
 
+    void writeDocVectorsToFile() {
+
+        try {
+            PrintWriter printWriter = new PrintWriter(new FileWriter(FilePaths.docVectors));
+            for (Integer docid : documentVectors.keySet()) {
+                HashMap<String, Double> components = documentVectors.get(docid);
+                StringBuilder comps = new StringBuilder();
+                for (String term : components.keySet()) {
+                    comps.append(term + ":" + components.get(term) + ",");
+                }
+                printWriter.println(docid + " " + comps.toString());
+            }
+            printWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
     HashMap<String, Double> constructQueryVector(String query) {
 
         //loadVocabularyOffsets("src/main/resources/termOffsetMap.txt");
@@ -516,5 +531,13 @@ public class QueryRetriever {
 
     HashMap<Integer, Integer> getDocLengthMap() {
         return docLengthMap;
+    }
+
+    public HashMap<Integer, HashMap<String, Double>> getDocumentVectors() {
+        return documentVectors;
+    }
+
+    public HashMap<Integer, Double> getDenominators() {
+        return denominators;
     }
 }
